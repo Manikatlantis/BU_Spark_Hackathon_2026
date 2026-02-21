@@ -12,3 +12,17 @@ USP- Partner driven, actively wokring towards
 -MLH - Warewolf media game at 830 <br>
 --Google AI workshop <br>
 --use vultr for deployment, MondgoDB for databaset <br>
+
+
+Cyvl DATA - Cyvl's OpenCity data <br>
+
+Identify user, problem they're facing, the solution, the insights generated from the data 
+model traffic? <br>
+
+GBH - community outreach and reporting (reporting only happens if something major happens), need more representation. <br>
+Look at the cities other than the 26 cities in the gateway cities (25% population of state and 40% foriegn born) <br>
+Communities want to reinvent themselves. <br>
+GBH's 26 in 26 initiative, think about what's next for Gateway cities. <br>
+finding trends - finding the best stuff about different communities <br>
+Deportation data project - info from ICE (arrests, country, location of sending them immediately after arrest, immigration data, cencs data) <br>
+Different stories of people that are underrepresented. THINK LIKE A REPORTER. 
