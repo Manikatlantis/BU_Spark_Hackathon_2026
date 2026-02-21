@@ -7,3 +7,5 @@ USP- Partner driven, actively wokring towards
 ----Opportunity expo 3-5pm
 
 --RED HAT- Use of Opensource AI, --workshop
+
+-- ELEVENLABS - using text to voice or something voice related, they do have an API. 
