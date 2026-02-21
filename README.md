@@ -27,4 +27,4 @@ finding trends - finding the best stuff about different communities <br>
 Deportation data project - info from ICE (arrests, country, location of sending them immediately after arrest, immigration data, cencs data) <br>
 Different stories of people that are underrepresented. THINK LIKE A REPORTER. <br>
 
-Create a unified dataset to showcase the immigration data and representation of community. 
+Create a unified dataset to showcase the immigration data and representation of community.  
