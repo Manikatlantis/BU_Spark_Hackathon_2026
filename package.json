@@ -1,0 +1,10 @@
+{
+  "name": "bu_spark",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "npm -w apps/api run dev & npm -w apps/web run dev",
+    "build": "npm -w apps/api run build && npm -w apps/web run build",
+    "lint": "npm -w apps/api run lint && npm -w apps/web run lint"
+  }
+}
