@@ -35,3 +35,25 @@ coverage/
 
 # Optional
 .idea/
+
+# ========================
+# Python
+# ========================
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+
+# ========================
+# Geospatial / Data
+# ========================
+data/
+*.laz
+*.las
+
+# ========================
+# OS / Misc
+# ========================
+Thumbs.db
