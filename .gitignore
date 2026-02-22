@@ -57,3 +57,22 @@ data/
 # OS / Misc
 # ========================
 Thumbs.db
+
+# Python virtualenv variations
+.venv/
+analysis/venv/
+venv*/
+.envrc
+
+# Jupyter (if we use notebooks later)
+.ipynb_checkpoints/
+
+# GeoJSON cache / big artifacts (optional but safe)
+*.npz
+*.parquet
+*.feather
+*.gpkg
+
+# macOS cruft
+.AppleDouble
+.LSOverride
