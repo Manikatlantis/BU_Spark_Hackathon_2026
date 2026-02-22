@@ -540,14 +540,26 @@ function onImageRefClick(h: HazardRow) {
 
 }, [severityFilter]);
 
-  // Resize map after expand animation completes
-  useEffect(() => {
-    setTimeout(() => {
-      mapRef.current?.resize();
-    }, 350);
-  }, [expanded]);
+// Resize map after expand animation completes
+useEffect(() => {
+  setTimeout(() => {
+    mapRef.current?.resize();
+  }, 350);
+}, [expanded]);
 
-  return (
+// 👇 ADD THIS DIRECTLY HERE
+useEffect(() => {
+  const heading = document.getElementById("page-heading");
+  if (!heading) return;
+
+  if (expanded) {
+    heading.style.display = "none";
+  } else {
+    heading.style.display = "block";
+  }
+}, [expanded]);
+
+return (
     <>
       <div
         onClick={(e) => {
