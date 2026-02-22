@@ -71,13 +71,53 @@ def load_candidate_tiles(tiles_json_path: Path) -> Dict[str, List[Dict]]:
     return mapping
 
 
-def download_with_cache(url: str, out_path: Path) -> Path:
-    """Download URL to out_path if not already present."""
+def current_cache_size_bytes(tile_cache: Path) -> int:
+    if not tile_cache.exists():
+        return 0
+    total = 0
+    for p in tile_cache.glob("*.laz"):
+        try:
+            total += p.stat().st_size
+        except FileNotFoundError:
+            pass
+    for p in tile_cache.glob("*.las"):
+        try:
+            total += p.stat().st_size
+        except FileNotFoundError:
+            pass
+    return total
+
+
+def download_with_cache(
+    url: str,
+    out_path: Path,
+    *,
+    no_download: bool,
+    max_download_bytes: int,
+    tile_cache: Path,
+) -> Optional[Path]:
+    """
+    Download URL to out_path if not already present.
+    Returns Path if available, or None if skipped (no-download or budget exceeded).
+    """
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     if out_path.exists() and out_path.stat().st_size > 0:
         print(f"✅ Using cached tile: {out_path.name} ({out_path.stat().st_size/1e6:.1f} MB)")
         return out_path
+
+    if no_download:
+        print(f"⏭️  Skipping (not cached, --no-download): {out_path.name}")
+        return None
+
+    # Budget guard (approximate): if cache already exceeds limit, skip
+    cache_bytes = current_cache_size_bytes(tile_cache)
+    if cache_bytes >= max_download_bytes:
+        print(
+            f"⏭️  Skipping download (cache budget reached {cache_bytes/1e9:.2f} GB >= {max_download_bytes/1e9:.2f} GB): "
+            f"{out_path.name}"
+        )
+        return None
 
     print(f"⬇️  Downloading {url}")
     with requests.get(url, stream=True, timeout=180) as r:
@@ -146,6 +186,23 @@ def clip_laz_to_roi_bbox_then_polygon(
     return out
 
 
+def order_tiles_for_candidate(tiles: List[Dict], tile_cache: Path) -> List[Dict]:
+    """
+    Order tiles to minimize downloads:
+    1) cached tiles first
+    2) then non-cached tiles (stable order)
+    """
+    def is_cached(t: Dict) -> bool:
+        fname = t.get("filename")
+        if not fname:
+            return False
+        return (tile_cache / fname).exists()
+
+    cached = [t for t in tiles if is_cached(t)]
+    not_cached = [t for t in tiles if not is_cached(t)]
+    return cached + not_cached
+
+
 def main():
     ap = argparse.ArgumentParser(description="Download candidate LAZ tiles and clip ROI points to candidate polygon.")
     ap.add_argument("--candidates", type=Path, default=DEFAULT_CANDIDATES)
@@ -154,15 +211,22 @@ def main():
     ap.add_argument("--tile-cache", type=Path, default=DEFAULT_TILE_CACHE)
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     ap.add_argument("--utm-epsg", type=int, default=32619, help="UTM CRS for Brookline pointcloud tiles")
-    ap.add_argument("--max-tiles", type=int, default=1, help="Use only the first N tiles for MVP speed")
+
+    ap.add_argument("--max-tiles", type=int, default=1, help="Use only the first N tiles (after caching preference).")
     ap.add_argument("--max-points", type=int, default=300_000, help="Cap points per tile for speed")
     ap.add_argument("--seed", type=int, default=42)
+
+    ap.add_argument("--no-download", action="store_true", help="Do not download any new LAZ tiles; use cache only.")
+    ap.add_argument("--max-download-gb", type=float, default=5.0, help="Max cache size allowed for LAZ tiles (GB).")
+
     args = ap.parse_args()
 
     if not args.candidates.exists():
         raise FileNotFoundError(f"Missing candidates file: {args.candidates}")
     if not args.tiles_json.exists():
         raise FileNotFoundError(f"Missing tiles json: {args.tiles_json}")
+
+    max_download_bytes = int(args.max_download_gb * 1e9)
 
     roi_poly = load_candidate_polygon_utm(args.candidates, args.candidate_id, utm_epsg=args.utm_epsg)
     tiles_map = load_candidate_tiles(args.tiles_json)
@@ -171,7 +235,10 @@ def main():
     if not tiles:
         raise ValueError(f"No tiles found for candidate_id={args.candidate_id}")
 
+    # Prefer cached tiles first
+    tiles = order_tiles_for_candidate(tiles, args.tile_cache)
     tiles = tiles[: args.max_tiles]
+
     combined = []
 
     for t in tiles:
@@ -181,7 +248,15 @@ def main():
             continue
 
         local_tile = args.tile_cache / fname
-        download_with_cache(url, local_tile)
+        local_tile = download_with_cache(
+            url,
+            local_tile,
+            no_download=args.no_download,
+            max_download_bytes=max_download_bytes,
+            tile_cache=args.tile_cache,
+        )
+        if local_tile is None:
+            continue
 
         clipped = clip_laz_to_roi_bbox_then_polygon(
             local_tile,
@@ -199,7 +274,8 @@ def main():
     if not combined:
         raise RuntimeError(
             f"No ROI points produced for {args.candidate_id}. "
-            f"Try --max-tiles 2 or increase --max-points, or verify EPSG:{args.utm_epsg}."
+            f"Try --max-tiles 2, increase --max-points, disable --no-download, "
+            f"or verify EPSG:{args.utm_epsg}."
         )
 
     # Merge arrays across tiles

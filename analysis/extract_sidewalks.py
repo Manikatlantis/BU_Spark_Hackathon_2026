@@ -1,4 +1,8 @@
 import geopandas as gpd
+from pathlib import Path
+
+OUT_PATH = Path("../data/brookline/processed/candidates.geojson")
+OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # 1️⃣ Load above ground assets
 gdf = gpd.read_file("../data/brookline/raw/aboveGroundAssets.geojson")
@@ -21,10 +25,11 @@ else:
 # 4️⃣ Create risk flag (Poor + Fair)
 sidewalks["risk_flag"] = sidewalks["condition"].isin(["Poor", "Fair"])
 
-candidates = sidewalks[sidewalks["risk_flag"] == True].copy()
+# candidates = sidewalks[sidewalks["risk_flag"] == True].copy()
+# candidates = sidewalks.copy()
 
-# 5️⃣ Limit to top 5 for MVP demo
-candidates = candidates.head(5)
+N = 250
+candidates = sidewalks.sample(n=N, random_state=42).copy()
 
 # 6️⃣ Assign candidate IDs
 candidates["candidate_id"] = [
@@ -37,9 +42,6 @@ candidates = candidates[
 ]
 
 # 8️⃣ Save output
-candidates.to_file(
-    "../data/brookline/processed/candidates.geojson",
-    driver="GeoJSON"
-)
+candidates.to_file(str(OUT_PATH), driver="GeoJSON")
 
 print("Saved candidates.geojson successfully.")

@@ -8,7 +8,12 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173" }));
+// app.use(cors({ origin: "http://localhost:5173" }));
+app.use(
+  cors({
+    origin: [/^http:\/\/localhost:\d+$/],
+  })
+);
 app.use(express.json());
 
 app.get("/api/health", (req, res) => {
@@ -21,7 +26,8 @@ app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
 });
 
-const DATA_DIR = path.join(process.cwd(), "data", "brookline", "processed");
+// const DATA_DIR = path.join(process.cwd(), "data", "brookline", "processed");
+const DATA_DIR = path.join(__dirname, "..", "..", "..", "data", "brookline", "processed");
 
 app.get("/api/brookline/candidates", (_req, res) => {
   const p = path.join(DATA_DIR, "candidates_buffer.geojson");
@@ -38,3 +44,5 @@ app.get("/api/brookline/flags", (_req, res) => {
   if (!fs.existsSync(p)) return res.json({ type: "FeatureCollection", features: [] });
   res.type("json").send(fs.readFileSync(p, "utf-8"));
 });
+
+console.log("DATA_DIR:", DATA_DIR);
