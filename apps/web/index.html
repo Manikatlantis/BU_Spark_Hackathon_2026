@@ -5,9 +5,236 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>web</title>
+
+    <style>
+      body { margin: 0; background: #000; }
+
+      /* Give page scroll runway */
+      #scroll-filler{
+        height: 220vh;
+      }
+
+      /* Keep root full screen so we can position overlays */
+      #root{
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        overflow: visible;
+
+        top: calc(78px + 1in);
+      }
+
+      /* =========================================================
+         PAPI FLASH + TYPE HEADER (overlay)
+         ========================================================= */
+      #papi-header {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%;
+        height: 78px;
+
+        z-index: 99999;
+        pointer-events: none;
+
+        display: grid;
+        align-items: center;
+        overflow: hidden;
+
+        background: rgba(8, 12, 18, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 520ms ease, transform 520ms ease;
+      }
+      #papi-header.is-visible { opacity: 1; transform: translateY(0); }
+
+      #papi-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      #papi-title {
+        position: relative;
+        padding: 0 22px;
+
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        font-weight: 900;
+        letter-spacing: 1.2px;
+        font-size: 22px;
+        line-height: 1.05;
+        text-transform: uppercase;
+
+        color: rgba(255, 255, 255, 0.96);
+        text-shadow: 0 1px 18px rgba(0, 0, 0, 0.55);
+      }
+
+      @media (max-width: 900px) {
+        #papi-header { height: 70px; }
+        #papi-title { font-size: 16px; letter-spacing: 0.95px; }
+      }
+
+      @media (max-width: 520px) {
+        #papi-header { height: 64px; }
+        #papi-title { font-size: 13px; letter-spacing: 0.8px; }
+      }
+
+      #papi-title.flash-glow {
+        text-shadow: 0 0 22px rgba(255, 255, 255, 0.68),
+          0 1px 18px rgba(0, 0, 0, 0.55);
+      }
+    </style>
   </head>
+
   <body>
+    <!-- Overlay header -->
+    <div id="papi-header" aria-label="PAPI flashing header">
+      <canvas id="papi-canvas"></canvas>
+      <div id="papi-title"></div>
+    </div>
+
+    <!-- React root -->
     <div id="root"></div>
+
+    <!-- filler to allow scrolling -->
+    <div id="scroll-filler"></div>
+
     <script type="module" src="/src/main.tsx"></script>
+
+    <script>
+      (function () {
+        /* =========================================================
+           HEADER FLASH + TYPE (same as before)
+           ========================================================= */
+        const header = document.getElementById("papi-header");
+        const titleEl = document.getElementById("papi-title");
+        const canvas = document.getElementById("papi-canvas");
+        const ctx = canvas.getContext("2d", { alpha: true });
+
+        const FULL_TITLE = "POINT-CLOUD ANALYSIS FOR PATHWAY INCLUSION (PAPI)";
+        const TYPE_START_DELAY_MS = 120;
+        const TYPE_MIN_MS = 10;
+        const TYPE_MAX_MS = 42;
+        const RETYPE_ON_EACH_FLASH = true;
+
+        const FLASH_EVERY_MS = 3200;
+        const FLASH_DURATION_MS = 520;
+
+        function resizeCanvas() {
+          const dpr = Math.max(1, window.devicePixelRatio || 1);
+          const rect = canvas.getBoundingClientRect();
+          canvas.width = Math.floor(rect.width * dpr);
+          canvas.height = Math.floor(rect.height * dpr);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener("resize", resizeCanvas, { passive: true });
+        resizeCanvas();
+
+        let typeTimeout = null;
+        function clearTyping() {
+          if (typeTimeout) { clearTimeout(typeTimeout); typeTimeout = null; }
+        }
+        function easeInOutQuad(x) {
+          return x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2)/2;
+        }
+        function scheduleType(i) {
+          if (i >= FULL_TITLE.length) { typeTimeout = null; return; }
+          titleEl.textContent += FULL_TITLE[i];
+
+          const p = i / Math.max(1, FULL_TITLE.length - 1);
+          const e = easeInOutQuad(p);
+          const delay = TYPE_MAX_MS - e * (TYPE_MAX_MS - TYPE_MIN_MS);
+
+          typeTimeout = setTimeout(() => scheduleType(i + 1), delay);
+        }
+        function typeTitleOnce() {
+          clearTyping();
+          titleEl.textContent = "";
+          scheduleType(0);
+        }
+
+        requestAnimationFrame(() => header.classList.add("is-visible"));
+        setTimeout(typeTitleOnce, TYPE_START_DELAY_MS);
+
+        let t0 = performance.now();
+        let flashStart = performance.now();
+        let nextFlash = flashStart + FLASH_EVERY_MS;
+
+        function rand(seed) {
+          const x = Math.sin(seed) * 10000;
+          return x - Math.floor(x);
+        }
+        function triggerFlash(now) {
+          flashStart = now;
+          nextFlash = now + FLASH_EVERY_MS;
+
+          titleEl.classList.add("flash-glow");
+          setTimeout(() => titleEl.classList.remove("flash-glow"), 260);
+
+          if (RETYPE_ON_EACH_FLASH) typeTitleOnce();
+        }
+
+        function draw(now) {
+          const w = canvas.clientWidth;
+          const h = canvas.clientHeight;
+          const t = (now - t0) / 1000;
+
+          ctx.clearRect(0, 0, w, h);
+
+          const g = ctx.createLinearGradient(0, 0, w, 0);
+          const shift = (Math.sin(t * 0.8) + 1) * 0.5;
+          g.addColorStop(0, `rgba(40, 120, 255, ${0.10 + shift * 0.04})`);
+          g.addColorStop(0.5, `rgba(255, 255, 255, 0.03)`);
+          g.addColorStop(1, `rgba(255, 80, 180, ${0.06 + (1 - shift) * 0.04})`);
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, w, h);
+
+          ctx.globalAlpha = 0.08;
+          ctx.fillStyle = "white";
+          for (let i = 0; i < 140; i++) {
+            const x = rand(t * 1000 + i * 13.7) * w;
+            const y = rand(t * 900 + i * 9.2) * h;
+            const rw = 1 + rand(t * 700 + i * 2.1) * 2;
+            const rh = 1 + rand(t * 800 + i * 3.3) * 2;
+            ctx.fillRect(x, y, rw, rh);
+          }
+          ctx.globalAlpha = 1.0;
+
+          const dt = now - flashStart;
+          if (dt >= 0 && dt < FLASH_DURATION_MS) {
+            const p = dt / FLASH_DURATION_MS;
+            const sweepX = -0.25 * w + p * (1.5 * w);
+
+            const band = ctx.createLinearGradient(sweepX - 140, 0, sweepX + 140, 0);
+            band.addColorStop(0, "rgba(255,255,255,0)");
+            band.addColorStop(0.44, "rgba(255,255,255,0.50)");
+            band.addColorStop(0.50, "rgba(255,255,255,0.95)");
+            band.addColorStop(0.56, "rgba(255,255,255,0.50)");
+            band.addColorStop(1, "rgba(255,255,255,0)");
+
+            ctx.globalCompositeOperation = "screen";
+            ctx.fillStyle = band;
+            ctx.fillRect(0, 0, w, h);
+
+            const glow = ctx.createLinearGradient(sweepX - 320, 0, sweepX + 320, 0);
+            glow.addColorStop(0, "rgba(120,180,255,0)");
+            glow.addColorStop(0.5, "rgba(120,180,255,0.18)");
+            glow.addColorStop(1, "rgba(120,180,255,0)");
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.globalCompositeOperation = "source-over";
+          }
+
+          if (now >= nextFlash) triggerFlash(now);
+          requestAnimationFrame(draw);
+        }
+        requestAnimationFrame(draw);
+      })();
+    </script>
   </body>
 </html>
