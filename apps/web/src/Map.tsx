@@ -22,6 +22,8 @@ export default function Map() {
   // Keep only one popup open at a time
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
+  const streetImagesRef = useRef<any[]>([]);
+
   const [expanded, setExpanded] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
 
@@ -76,6 +78,20 @@ export default function Map() {
         setHazards(rows);
       })
       .catch(console.error);
+  }, []);
+
+    useEffect(() => {
+    fetch("/streetviewImages.geojson")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data?.features) return;
+
+        streetImagesRef.current = data.features;
+        console.log("Loaded street images:", data.features.length);
+      })
+      .catch((err) => {
+        console.error("Failed to load street images", err);
+      });
   }, []);
 
   // -----------------------------
@@ -161,15 +177,46 @@ function flyToHazard(h: HazardRow) {
   });
 }
 
-function onImageRefClick(h: HazardRow) {
-  console.log("image ref:", h.candidate_id);
-}
-
 // -----------------------------
 // Image reference button handler (for later use)
 // -----------------------------
 function onImageRefClick(h: HazardRow) {
-  console.log("image ref:", h.candidate_id);
+  const images = streetImagesRef.current;
+  if (!images.length) {
+    console.log("No street images loaded yet");
+    return;
+  }
+
+  const [hazLon, hazLat] = h.__coords;
+
+  let bestUrl: string | null = null;
+  let bestDist = Infinity;
+
+  for (const f of images) {
+    const coords = f?.geometry?.coordinates;
+    if (!Array.isArray(coords) || coords.length < 2) continue;
+
+    const lon = Number(coords[0]);
+    const lat = Number(coords[1]);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+
+    const dx = lon - hazLon;
+    const dy = lat - hazLat;
+    const distSq = dx * dx + dy * dy;
+
+    if (distSq < bestDist) {
+      bestDist = distSq;
+      bestUrl = f?.properties?.image_url ?? null;
+    }
+  }
+
+  if (!bestUrl) {
+    console.log("No nearest image found");
+    return;
+  }
+
+  console.log("Nearest image:", bestUrl);
+  window.open(bestUrl, "_blank");
 }
 
   useEffect(() => {
