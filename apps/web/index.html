@@ -15,50 +15,49 @@
       overflow-x: hidden;
     }
 
-    /* Overlay Map Heading */
+    /* ===== Top Heading ===== */
     #page-heading {
       position: fixed;
-      top: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      font-size: 22px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      padding: 20px;
+      font-size: 24px;
       font-weight: 700;
-      color: #fff;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 18px;
-      border-radius: 14px;
+      background: rgba(0,0,0,0.75);
       backdrop-filter: blur(6px);
-      pointer-events: none;
+      z-index: 10000;
+      transition: transform 0.4s ease;
     }
 
-    #root {
-      min-height: 100vh;
+    .heading-hidden {
+      transform: translateY(-100%);
     }
 
-    /* ========================= */
-    /* Scroll Narrative Section */
-    /* ========================= */
+    /* ===== Layout Container ===== */
+    .layout {
+      display: flex;
+      margin-top: 80px;
+    }
 
-    #pipeline-explainer {
-      position: relative;
-      background: linear-gradient(180deg,#0b0f18 0%,#111827 100%);
+    /* ===== LEFT SIDE SCROLLING TEXT ===== */
+    .text-panel {
+      width: 50%;
+      padding: 80px 60px;
     }
 
     .scroll-section {
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
-      text-align: center;
-      padding: 0 40px;
-      position: relative;
       opacity: 0;
-      transform: translateY(80px);
+      transform: translateX(-80px);
     }
 
     .scroll-section h1 {
-      font-size: 64px;
+      font-size: 60px;
       margin-bottom: 20px;
       background: linear-gradient(90deg,#00e5ff,#8b5cf6);
       -webkit-background-clip: text;
@@ -66,7 +65,7 @@
     }
 
     .scroll-section h2 {
-      font-size: 42px;
+      font-size: 36px;
       color: #00e5ff;
       margin-bottom: 20px;
     }
@@ -74,16 +73,29 @@
     .scroll-section p {
       font-size: 20px;
       line-height: 1.7;
-      max-width: 800px;
-      margin: auto;
       color: #d1d5db;
+      max-width: 600px;
     }
 
     .equation {
-      font-size: 32px;
+      font-size: 30px;
       font-weight: bold;
       margin: 30px 0;
       color: #00e5ff;
+    }
+
+    /* ===== RIGHT SIDE MAP ===== */
+    .map-panel {
+      width: 50%;
+      position: fixed;
+      right: 0;
+      top: 80px;
+      height: calc(100vh - 80px);
+      background: #000;
+    }
+
+    #root {
+      height: 100%;
     }
 
   </style>
@@ -91,66 +103,74 @@
 
 <body>
 
-<div id="page-heading">Point-Cloud Analysis for Pathway Inclusion</div>
+<div id="page-heading">
+  P.A.P.I — Point-cloud Analysis for Pathway Inclusion
+</div>
 
-<!-- React Map -->
-<div id="root"></div>
+<div class="layout">
 
-<!-- Scroll Explainer -->
-<section id="pipeline-explainer">
+  <!-- LEFT SCROLL CONTENT -->
+  <div class="text-panel">
 
-  <div class="scroll-section">
-    <div>
+    <div class="scroll-section">
       <h1>P.A.P.I</h1>
-      <p>Point-cloud Analysis for Pathway Inclusion</p>
+      <p>
+        Automated sidewalk hazard detection using high-density LiDAR data across Brookline, MA.
+      </p>
     </div>
-  </div>
 
-  <div class="scroll-section">
-    <div>
-      <h2>Raw LiDAR → Millions of 3D Points</h2>
-      <p>High-density .laz files captured by Cyvl.ai represent sidewalks as precise 3D geometry.</p>
+    <div class="scroll-section">
+      <h2>Raw LiDAR Geometry</h2>
+      <p>
+        Millions of 3D points (.laz) captured by Cyvl.ai represent real-world sidewalks in millimeter precision.
+      </p>
     </div>
-  </div>
 
-  <div class="scroll-section">
-    <div>
+    <div class="scroll-section">
       <h2>2 Meter Corridor Precision</h2>
-      <p>Sidewalk centerlines are buffered in UTM space to isolate only the walkable surface.</p>
+      <p>
+        Sidewalk centerlines are buffered in UTM space to isolate the exact walkable surface.
+      </p>
     </div>
-  </div>
 
-  <div class="scroll-section">
-    <div>
-      <h2>Plane Fitting Mathematics</h2>
+    <div class="scroll-section">
+      <h2>Plane Fitting</h2>
       <div class="equation">z = ax + by + c</div>
-      <p>Least-squares regression estimates surface tilt from 3D points.</p>
+      <p>
+        Least-squares regression models surface tilt from the clipped point cloud.
+      </p>
     </div>
-  </div>
 
-  <div class="scroll-section">
-    <div>
-      <h2>Cross-Slope Formula</h2>
+    <div class="scroll-section">
+      <h2>Cross-Slope Calculation</h2>
       <div class="equation">|a| / √(1 + a² + b²)</div>
-      <p>ADA requirement: ≤ 2% maximum cross-slope.</p>
+      <p>
+        ADA maximum cross-slope: ≤ 2%.
+      </p>
     </div>
-  </div>
 
-  <div class="scroll-section">
-    <div>
+    <div class="scroll-section">
       <h2>Vertical Step Detection</h2>
-      <p>Δz &gt; 6mm flags uplift or cracks. Δz &gt; 13mm is high severity.</p>
+      <p>
+        Δz &gt; 6mm indicates cracks or uplift. Δz &gt; 13mm is high severity.
+      </p>
     </div>
-  </div>
 
-  <div class="scroll-section">
-    <div>
+    <div class="scroll-section">
       <h2>Impact</h2>
-      <p>250 corridors analyzed. 32,467 hazards identified. Millimeter-scale detection across Brookline, MA.</p>
+      <p>
+        250 corridors analyzed. 32,467 hazards identified.
+      </p>
     </div>
+
   </div>
 
-</section>
+  <!-- RIGHT FIXED MAP -->
+  <div class="map-panel">
+    <div id="root"></div>
+  </div>
+
+</div>
 
 <!-- GSAP -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -161,19 +181,34 @@ window.addEventListener("load", () => {
 
   gsap.registerPlugin(ScrollTrigger);
 
-  gsap.utils.toArray(".scroll-section").forEach((section) => {
+  gsap.utils.toArray(".scroll-section").forEach((section, i) => {
 
-    gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: "top center",
-        end: "bottom center",
-        scrub: true
+    gsap.fromTo(section,
+      { opacity: 0, x: -100 },
+      {
+        opacity: 1,
+        x: 0,
+        duration: 1,
+        scrollTrigger: {
+          trigger: section,
+          start: "top 70%",
+          toggleActions: "play reverse play reverse"
+        }
       }
-    })
-    .to(section, { opacity: 1, y: 0, duration: 1 })
-    .to(section, { opacity: 0, y: -80, duration: 1 });
+    );
 
+  });
+
+  // Hide heading when scrolling down
+  let lastScroll = 0;
+  window.addEventListener("scroll", () => {
+    const heading = document.getElementById("page-heading");
+    if (window.scrollY > lastScroll && window.scrollY > 50) {
+      heading.classList.add("heading-hidden");
+    } else {
+      heading.classList.remove("heading-hidden");
+    }
+    lastScroll = window.scrollY;
   });
 
 });
