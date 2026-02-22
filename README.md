@@ -16,10 +16,15 @@
 ## The Problem
 
 61 million Americans live with a disability. For wheelchair users, people with visual impairments, elderly residents, and unhoused individuals who depend on sidewalks as their primary infrastructure — a single cracked or tilted pavement panel is not an inconvenience. It is a barrier.
+
+
 ![Disability Population](assets/Disability-Population.jpeg)
+
+
 
 ![Disability Stats](assets/Disability-Stats.jpeg)
 The Americans with Disabilities Act has mandated a maximum sidewalk **cross-slope of 2%** since 1990. Over three decades later, compliance is almost never measured at scale. Cities rely on manual inspection reports, 311 calls, and occasional visual surveys. The math has simply never been done systematically.
+
 
 ![Impact Statement](assets/Impact-Statement.jpeg)
 
@@ -29,6 +34,7 @@ The Americans with Disabilities Act has mandated a maximum sidewalk **cross-slop
 ![Title](assets/Title.jpeg)
 
 By applying least-squares plane-fitting to mobile LiDAR point cloud data, we automatically compute ADA cross-slope compliance and vertical step detection across an entire city district — with sub-millimeter accuracy, at a fraction of the cost of manual inspection.
+
 
 ![ADA Scoring Math](assets/ADA-Scoring-Math.jpeg)
 
@@ -167,7 +173,9 @@ BU_SPARK/
 
 ## The Data Pipeline
 
+
 ![Scripts](assets/Scripts.jpeg)
+
 
 ### Step 1 — Extract Sidewalk Candidates
 
@@ -308,7 +316,10 @@ Loads each `roi_points_CAND_*.npz` file and runs the mathematical hazard detecti
   "lon": -71.1284
 }
 ```
+
 ![Hazard Face](assets/Hazard-Face.jpeg)
+
+
 ---
 
 ## The Mathematics
@@ -383,9 +394,12 @@ max_step_mm = np.max(np.abs(dz)) * 1000  # convert m → mm
 
 A hazard is scored at the highest tier triggered by either metric.
 
+
 ![Hazard Ranked](assets/Hazard-Ranked.jpeg)
 
+
 ![Hazard Map](assets/Hazard-map.jpeg)
+
 ---
 
 ## Data Sources
@@ -398,7 +412,10 @@ All data provided by **[Cyvl.ai](https://cyvl.ai)** via their mobile LiDAR captu
 | `pointcloud_coverage.json` | GeoJSON | LiDAR tile footprints with `potree_url` and `download_url` per tile |
 | `streetviewImages.geojson` | GeoJSON | Geolocated JPEG frames from the survey vehicle |
 
+
 ![Datasets](assets/Datasets.jpeg)
+
+
 
 ### Point Cloud Tile Schema
 
@@ -484,6 +501,7 @@ Potree.loadPointCloud(src, "Sidewalk", e => {
 ---
 
 ### Street Image Integration
+
 ![Street view](assets/street-view.jpeg)
 
 For every detected hazard, we find the nearest Cyvl street image using **Haversine distance** computed across all frames in `streetviewImages.geojson`:
@@ -624,6 +642,7 @@ map.on('load', () => {
 
 **Reference:** [ADA Standards for Accessible Design (2010)](https://www.ada.gov/law-and-regs/design-standards/2010-stds/)
 
+
 ![Math](assets/Math.jpeg)
 
 ---
@@ -646,6 +665,7 @@ Prior ADA sidewalk compliance work relies on manual physical inspection or photo
 1. Apply **mobile LiDAR point cloud plane-fitting** to automate cross-slope measurement at citywide scale
 2. Combine **geometric math, spatial clipping, and image evidence** into a single reproducible pipeline
 3. Produce a **web-deployable, interactive hazard map** tied to real street photography for each flagged location
+
 
 ![Prior scale](assets/Prior-scale.jpeg)
 
